@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ОВС — Охранная Видеосистема</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f1419;
+            --bg-secondary: #1a1f2e;
+            --bg-card: #232938;
+            --accent: #00d9a3;
+            --accent-hover: #00b88a;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --text-primary: #e8eaf0;
+            --text-secondary: #8b95a7;
+            --border: #2d3548;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), #0099cc);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.alarm {
+            background: var(--danger);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Navigation */
+        .nav {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .stat-icon.green { background: rgba(0, 217, 163, 0.15); }
+        .stat-icon.red { background: rgba(255, 71, 87, 0.15); }
+        .stat-icon.blue { background: rgba(0, 153, 204, 0.15); }
+        .stat-icon.orange { background: rgba(255, 165, 2, 0.15); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-change {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Gallery */
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .gallery-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .event-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .event-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .event-image {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .event-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .event-badge {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--danger);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .event-info {
+            padding: 1rem;
+        }
+
+        .event-type {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .event-time {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Settings */
+        .settings-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .settings-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            flex: 1;
+        }
+
+        .setting-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .setting-desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .setting-control {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .slider {
+            width: 200px;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-secondary);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+        }
+
+        .toggle {
+            width: 48px;
+            height: 24px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle.active {
+            background: var(--accent);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(24px);
+        }
+
+        /* Log */
+        .log-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 0.75rem;
+            border-left: 3px solid var(--border);
+            margin-bottom: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+        }
+
+        .log-entry.alarm {
+            border-left-color: var(--danger);
+        }
+
+        .log-entry.info {
+            border-left-color: var(--accent);
+        }
+
+        .log-entry.warning {
+            border-left-color: var(--warning);
+        }
+
+        .log-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .log-message {
+            font-size: 0.875rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 16px;
+            max-width: 900px;
+            width: 90%;
+            max-height: 90vh;
+            overflow: auto;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 1.25rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-image {
+            width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .modal-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .detail-item {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-value {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                padding: 1rem;
+            }
+
+            .nav {
+                padding: 0 1rem;
+                overflow-x: auto;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🛡️</div>
+            <span>ОВС — Охранная Видеосистема</span>
+        </div>
+        <div class="status-badge">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Охрана активна</span>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-item active" data-page="dashboard">📊 Обзор</div>
+        <div class="nav-item" data-page="gallery">📷 Архив событий</div>
+        <div class="nav-item" data-page="settings">⚙️ Настройки</div>
+        <div class="nav-item" data-page="log">📋 Журнал</div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Dashboard Page -->
+        <div class="page active" id="dashboard">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Режим работы</div>
+                        <div class="stat-icon green">🔒</div>
+                    </div>
+                    <div class="stat-value" id="currentMode">Охрана</div>
+                    <div class="stat-change">Потребление: 4.2 мА</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Событий за сутки</div>
+                        <div class="stat-icon red">⚠️</div>
+                    </div>
+                    <div class="stat-value" id="eventsCount">0</div>
+                    <div class="stat-change">Последнее: <span id="lastEvent">—</span></div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Хранилище</div>
+                        <div class="stat-icon blue">💾</div>
+                    </div>
+                    <div class="stat-value" id="storageUsed">0 ГБ</div>
+                    <div class="stat-change">из 32 ГБ (MicroSD)</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Время работы</div>
+                        <div class="stat-icon orange">⏱️</div>
+                    </div>
+                    <div class="stat-value" id="uptime">0ч</div>
+                    <div class="stat-change">С последнего включения</div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="settings-title">Последние события</h3>
+                <div id="recentEvents">
+                    <div class="empty-state">
+                        <div class="empty-icon">✨</div>
+                        <p>Событий не обнаружено</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery Page -->
+        <div class="page" id="gallery">
+            <div class="gallery-header">
+                <h2 class="gallery-title">Архив событий</h2>
+                <div class="filter-group">
+                    <button class="filter-btn active" data-filter="all">Все</button>
+                    <button class="filter-btn" data-filter="person">Люди</button>
+                    <button class="filter-btn" data-filter="impact">Удар</button>
+                    <button class="filter-btn" data-filter="motion">Движение</button>
+                </div>
+            </div>
+
+            <div class="gallery-grid" id="galleryGrid">
+                <div class="empty-state">
+                    <div class="empty-icon">📷</div>
+                    <p>Архив пуст</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div class="page" id="settings">
+            <div class="settings-section">
+                <h3 class="settings-title">Датчики</h3>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <div class="setting-name">Чувствительность PIR-датчика</div>
+                        <div class="setting-desc">Порог срабатывания датчика движения</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="range" class="slider" min="1" max="10" value="7" id="pirSensitivity">
+                        <span id="pirValue">7</span>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <div class="setting-name">Чувствительность G-сенсора</div>
+                        <div class="setting-desc">Порог срабатывания датчика удара</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="range" class="slider" min="1" max="10" value="5" id="gSensorSensitivity">
+                        <span id="gSensorValue">5</span>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <div class="setting-name">Задержка перед срабатыванием</div>
+                        <div class="setting-desc">Время верификации перед активацией тревоги</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="range" class="slider" min="1" max="5" value="2" id="delay">
+                        <span id="delayValue">2 сек</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="settings-title">Уведомления</h3>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <div class="setting-name">SMS-уведомления</div>
+                        <div class="setting-desc">Отправка SMS при срабатывании тревоги</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle active" id="smsToggle"></div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <div class="setting-name">Звуковая сирена</div>
+                        <div class="setting-desc">Активное звуковое оповещение</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle active" id="sirenToggle"></div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <div class="setting-name">Номер для уведомлений</div>
+                        <div class="setting-desc">Телефон для отправки SMS</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="text" placeholder="+7 (999) 123-45-67" style="padding: 0.5rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); width: 200px;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="settings-title">Система</h3>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <div class="setting-name">Версия прошивки</div>
+                        <div class="setting-desc">Текущая версия ПО</div>
+                    </div>
+                    <div class="setting-control">
+                        <span>v1.2.3 (Build 2026.10.06)</span>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <div class="setting-name">Перезагрузить систему</div>
+                        <div class="setting-desc">Перезапуск всех компонентов</div>
+                    </div>
+                    <div class="setting-control">
+                        <button class="filter-btn" onclick="alert('Перезагрузка...')">Перезагрузить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Page -->
+        <div class="page" id="log">
+            <h2 class="gallery-title" style="margin-bottom: 1.5rem;">Журнал событий</h2>
+            <div class="log-container" id="logContainer">
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <p>Журнал пуст</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Детали события</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <img src="" alt="Event" class="modal-image" id="modalImage">
+                <div class="modal-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Тип события</div>
+                        <div class="detail-value" id="modalType">—</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Время</div>
+                        <div class="detail-value" id="modalTime">—</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Длительность</div>
+                        <div class="detail-value" id="modalDuration">—</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Уверенность детекции</div>
+                        <div class="detail-value" id="modalConfidence">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        const pages = document.querySelectorAll('.page');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const targetPage = item.dataset.page;
+                
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                
+                pages.forEach(page => page.classList.remove('active'));
+                document.getElementById(targetPage).classList.add('active');
+            });
+        });
+
+        // Settings sliders
+        document.getElementById('pirSensitivity').addEventListener('input', (e) => {
+            document.getElementById('pirValue').textContent = e.target.value;
+        });
+
+        document.getElementById('gSensorSensitivity').addEventListener('input', (e) => {
+            document.getElementById('gSensorValue').textContent = e.target.value;
+        });
+
+        document.getElementById('delay').addEventListener('input', (e) => {
+            document.getElementById('delayValue').textContent = e.target.value + ' сек';
+        });
+
+        // Toggles
+        document.querySelectorAll('.toggle').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('active');
+            });
+        });
+
+        // Filter buttons
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // Здесь будет фильтрация галереи
+            });
+        });
+
+        // Modal
+        function openModal(eventId) {
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('eventModal').classList.remove('active');
+        }
+
+        // Demo data (замените на реальные данные с бэкенда)
+        const demoEvents = [
+            {
+                id: 1,
+                type: 'person',
+                typeName: 'Обнаружен человек',
+                time: '2026-10-06 14:23:15',
+                duration: '12 сек',
+                confidence: '94%',
+                image: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"><rect fill="%231a1f2e" width="400" height="200"/><text x="50%" y="50%" fill="%238b95a7" text-anchor="middle" dy=".3em">Изображение события</text></svg>'
+            }
+        ];
+
+        // Load demo data
+        function loadDemoData() {
+            document.getElementById('eventsCount').textContent = demoEvents.length;
+            document.getElementById('lastEvent').textContent = demoEvents.length > 0 ? '14:23' : '—';
+            document.getElementById('storageUsed').textContent = '2.4 ГБ';
+            document.getElementById('uptime').textContent = '14ч';
+
+            // Load gallery
+            const galleryGrid = document.getElementById('galleryGrid');
+            if (demoEvents.length > 0) {
+                galleryGrid.innerHTML = demoEvents.map(event => `
+                    <div class="event-card" onclick="openModal(${event.id})">
+                        <div class="event-image">
+                            <img src="${event.image}" alt="Event">
+                            <div class="event-badge">${event.typeName}</div>
+                        </div>
+                        <div class="event-info">
+                            <div class="event-type">${event.typeName}</div>
+                            <div class="event-time">${event.time}</div>
+                            <div class="event-meta">
+                                <span>⏱️ ${event.duration}</span>
+                                <span>🎯 ${event.confidence}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Load recent events
+            const recentEvents = document.getElementById('recentEvents');
+            if (demoEvents.length > 0) {
+                recentEvents.innerHTML = demoEvents.slice(0, 3).map(event => `
+                    <div class="log-entry alarm">
+                        <div class="log-time">${event.time}</div>
+                        <div class="log-message">${event.typeName} — ${event.confidence} уверенность</div>
+                    </div>
+                `).join('');
+            }
+
+            // Load log
+            const logContainer = document.getElementById('logContainer');
+            const logs = [
+                { time: '2026-10-06 14:23:15', message: 'Обнаружен человек — уверенность 94%', type: 'alarm' },
+                { time: '2026-10-06 14:23:12', message: 'Активация режима верификации', type: 'info' },
+                { time: '2026-10-06 14:23:10', message: 'PIR-датчик сработал', type: 'info' },
+                { time: '2026-10-06 14:20:00', message: 'Система перешла в режим охраны', type: 'info' },
+                { time: '2026-10-06 14:19:58', message: 'Запуск системы завершен', type: 'info' }
+            ];
+            
+            logContainer.innerHTML = logs.map(log => `
+                <div class="log-entry ${log.type}">
+                    <div class="log-time">${log.time}</div>
+                    <div class="log-message">${log.message}</div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        loadDemoData();
+
+        // Auto-refresh (каждые 5 секунд)
+        setInterval(() => {
+            // Здесь будет запрос к бэкенду для обновления данных
+            console.log('Обновление данных...');
+        }, 5000);
+    </script>
+</body>
+</html>
