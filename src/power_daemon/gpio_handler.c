@@ -5,7 +5,7 @@
  * Использует sysfs GPIO интерфейс Linux для чтения прерываний.
  * Настраивает GPIO на rising edge для детекции событий.
  */
-
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,8 +54,9 @@ static int gpio_export(int gpio_num) {
     }
     
     close(fd);
-    usleep(100000); // Ждем 100 мс для применения
-    
+    struct timespec ts = {0, 100000000}; // 100 мс
+    nanosleep(&ts, NULL);
+   
     return 0;
 }
 
@@ -174,9 +175,9 @@ sensor_event_t gpio_check_interrupts(void) {
     
     // Проверка PIR-датчика
     if (fds[0].revents & POLLPRI) {
-        char buf[4];
+        char buf[4] = {0}; // Явная инициализация нулями
         lseek(fd_pir, 0, SEEK_SET);
-        if (read(fd_pir, buf, sizeof(buf)) > 0) {
+        if (read(fd_pir, buf, sizeof(buf) - 1) > 0) { // -1 для безопасности
             if (buf[0] == '1') {
                 syslog(LOG_INFO, "PIR-датчик сработал");
                 event.type = EVENT_PIR_TRIGGER;
@@ -188,9 +189,9 @@ sensor_event_t gpio_check_interrupts(void) {
     
     // Проверка G-сенсора
     if (fds[1].revents & POLLPRI) {
-        char buf[4];
+        char buf[4]={0};
         lseek(fd_g_sensor, 0, SEEK_SET);
-        if (read(fd_g_sensor, buf, sizeof(buf)) > 0) {
+        if (read(fd_g_sensor, buf, sizeof(buf)-1) > 0) {
             if (buf[0] == '1') {
                 syslog(LOG_INFO, "G-сенсор сработал (удар/вибрация)");
                 event.type = EVENT_G_SENSOR_TRIGGER;
@@ -206,14 +207,14 @@ sensor_event_t gpio_check_interrupts(void) {
 // Включение/выключение сирены
 void gpio_siren_on(void) {
     if (fd_siren >= 0) {
-        write(fd_siren, "1", 1);
+        (void)write(fd_siren, "1", 1);
         syslog(LOG_INFO, "Сирена включена");
     }
 }
 
 void gpio_siren_off(void) {
     if (fd_siren >= 0) {
-        write(fd_siren, "0", 1);
+        (void)write(fd_siren, "0", 1);
         syslog(LOG_INFO, "Сирена выключена");
     }
 }
@@ -221,14 +222,14 @@ void gpio_siren_off(void) {
 // Включение/выключение камеры
 void gpio_camera_on(void) {
     if (fd_camera >= 0) {
-        write(fd_camera, "1", 1);
+        (void)write(fd_camera, "1", 1);
         syslog(LOG_INFO, "Камера включена");
     }
 }
 
 void gpio_camera_off(void) {
     if (fd_camera >= 0) {
-        write(fd_camera, "0", 1);
+        (void)write(fd_camera, "0", 1);
         syslog(LOG_INFO, "Камера выключена");
     }
 }
@@ -249,16 +250,16 @@ void gpio_cleanup(void) {
         int len;
         
         len = snprintf(buf, sizeof(buf), "%d", GPIO_PIR_SENSOR);
-        write(fd, buf, len);
+        (void)write(fd, buf, len);
         
         len = snprintf(buf, sizeof(buf), "%d", GPIO_G_SENSOR_INT);
-        write(fd, buf, len);
+        (void)write(fd, buf, len);
         
         len = snprintf(buf, sizeof(buf), "%d", GPIO_SIREN_CTRL);
-        write(fd, buf, len);
+        (void)write(fd, buf, len);
         
         len = snprintf(buf, sizeof(buf), "%d", GPIO_CAMERA_EN);
-        write(fd, buf, len);
+        (void)write(fd, buf, len);
         
         close(fd);
     }

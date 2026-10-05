@@ -120,6 +120,8 @@ void main_loop(void) {
 }
 
 int main(int argc, char *argv[]) {
+    (void)argc;
+    (void)argv;
     // Открытие syslog
     openlog("ovs_power_daemon", LOG_PID | LOG_CONS, LOG_DAEMON);
     syslog(LOG_INFO, "Демон управления питанием запущен (PID: %d)", getpid());

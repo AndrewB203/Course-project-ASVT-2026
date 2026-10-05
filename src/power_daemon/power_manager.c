@@ -9,16 +9,8 @@
 #include <syslog.h>
 #include <time.h>
 
-#include "power_manager.h"
+#include "power_manager.h"  // <-- здесь уже подключен enum
 #include "gpio_handler.h"
-
-// Состояния системы
-typedef enum {
-    STATE_DEEP_SLEEP,
-    STATE_ACTIVE,
-    STATE_ALARM,
-    STATE_SERVICE
-} system_state_t;
 
 // Таймеры
 static time_t wakeup_time = 0;
@@ -27,7 +19,6 @@ static time_t alarm_start_time = 0;
 // Инициализация менеджера питания
 int power_manager_init(void) {
     syslog(LOG_INFO, "Инициализация менеджера питания");
-    // Здесь можно добавить инициализацию WDT, DC-DC и т.д.
     return 0;
 }
 
