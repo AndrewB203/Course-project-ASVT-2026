@@ -11,7 +11,7 @@ import glob
 
 app = FastAPI(title="ОВС Сервисный Интерфейс")
 
-ARCHIVE_DIR = "/mnt/microsd/archive"
+ARCHIVE_DIR = "archive"
 CONFIG_FILE = "/etc/ovs/config.json"
 
 # Убедимся, что директория существует (для тестов на ПК)
