@@ -798,139 +798,107 @@
     </div>
 
     <script>
-        // Navigation
+        // === РЕАЛЬНАЯ РАБОТА С API ===
+
+        // 1. Загрузка статуса и архива при открытии страницы
+        async function loadData() {
+            try {
+                // Запрос статуса
+                const statusRes = await fetch('/api/status');
+                const status = await statusRes.json();
+                document.getElementById('storageUsed').textContent = (status.storage_used_mb / 1024).toFixed(1) + ' ГБ';
+                document.getElementById('uptime').textContent = status.system_uptime;
+
+                // Запрос списка архива
+                const archiveRes = await fetch('/api/archive');
+                const archiveData = await archiveRes.json();
+                
+                const galleryGrid = document.getElementById('galleryGrid');
+                const recentEvents = document.getElementById('recentEvents');
+                
+                if (archiveData.files.length === 0) {
+                    galleryGrid.innerHTML = '<div class="empty-state"><div class="empty-icon">📷</div><p>Архив пуст</p></div>';
+                    recentEvents.innerHTML = '<div class="empty-state"><p>Событий не обнаружено</p></div>';
+                    document.getElementById('eventsCount').textContent = '0';
+                    return;
+                }
+
+                document.getElementById('eventsCount').textContent = archiveData.files.length;
+                document.getElementById('lastEvent').textContent = 'Недавно';
+
+                // Генерация карточек архива
+                galleryGrid.innerHTML = archiveData.files.map(file => `
+                    <div class="event-card">
+                        <div class="event-image" style="background: #2d2d2d; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                            <span style="font-size: 3rem;">🔒</span>
+                            <span style="color: #8b95a7; margin-top: 10px;">Зашифровано (AES-256)</span>
+                        </div>
+                        <div class="event-info">
+                            <div class="event-type">Архивный файл</div>
+                            <div class="event-time">${file.name}</div>
+                            <div class="event-meta">
+                                <span>💾 ${file.size_kb} КБ</span>
+                                <a href="/api/archive/download/${file.name}" class="filter-btn" style="text-decoration: none; color: var(--accent);">Скачать</a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Генерация последних событий (берем последние 3 файла)
+                recentEvents.innerHTML = archiveData.files.slice(0, 3).map(file => `
+                    <div class="log-entry alarm">
+                        <div class="log-time">Запись создана</div>
+                        <div class="log-message">Файл: ${file.name} (${file.size_kb} КБ) - Зашифрован</div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error("Ошибка загрузки данных:", error);
+                document.getElementById('galleryGrid').innerHTML = '<div class="empty-state"><p>Ошибка подключения к API. Убедитесь, что сервис запущен.</p></div>';
+            }
+        }
+
+        // 2. Обработка сохранения настроек
+        async function saveSettings() {
+            const settings = {
+                pir_sensitivity: document.getElementById('pirSensitivity').value,
+                g_sensor_sensitivity: document.getElementById('gSensorSensitivity').value,
+                delay: document.getElementById('delay').value
+            };
+
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                alert("Ошибка сохранения настроек");
+            }
+        }
+
+        // Навигация по вкладкам (без изменений)
         const navItems = document.querySelectorAll('.nav-item');
         const pages = document.querySelectorAll('.page');
-
         navItems.forEach(item => {
             item.addEventListener('click', () => {
                 const targetPage = item.dataset.page;
-                
                 navItems.forEach(nav => nav.classList.remove('active'));
                 item.classList.add('active');
-                
                 pages.forEach(page => page.classList.remove('active'));
                 document.getElementById(targetPage).classList.add('active');
             });
         });
 
-        // Settings sliders
-        document.getElementById('pirSensitivity').addEventListener('input', (e) => {
-            document.getElementById('pirValue').textContent = e.target.value;
-        });
+        // Обновление значений слайдеров
+        document.getElementById('pirSensitivity').addEventListener('input', (e) => document.getElementById('pirValue').textContent = e.target.value);
+        document.getElementById('gSensorSensitivity').addEventListener('input', (e) => document.getElementById('gSensorValue').textContent = e.target.value);
+        document.getElementById('delay').addEventListener('input', (e) => document.getElementById('delayValue').textContent = e.target.value + ' сек');
 
-        document.getElementById('gSensorSensitivity').addEventListener('input', (e) => {
-            document.getElementById('gSensorValue').textContent = e.target.value;
-        });
-
-        document.getElementById('delay').addEventListener('input', (e) => {
-            document.getElementById('delayValue').textContent = e.target.value + ' сек';
-        });
-
-        // Toggles
-        document.querySelectorAll('.toggle').forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                toggle.classList.toggle('active');
-            });
-        });
-
-        // Filter buttons
-        const filterBtns = document.querySelectorAll('.filter-btn');
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                filterBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                // Здесь будет фильтрация галереи
-            });
-        });
-
-        // Modal
-        function openModal(eventId) {
-            document.getElementById('eventModal').classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('eventModal').classList.remove('active');
-        }
-
-        // Demo data (замените на реальные данные с бэкенда)
-        const demoEvents = [
-            {
-                id: 1,
-                type: 'person',
-                typeName: 'Обнаружен человек',
-                time: '2026-10-06 14:23:15',
-                duration: '12 сек',
-                confidence: '94%',
-                image: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"><rect fill="%231a1f2e" width="400" height="200"/><text x="50%" y="50%" fill="%238b95a7" text-anchor="middle" dy=".3em">Изображение события</text></svg>'
-            }
-        ];
-
-        // Load demo data
-        function loadDemoData() {
-            document.getElementById('eventsCount').textContent = demoEvents.length;
-            document.getElementById('lastEvent').textContent = demoEvents.length > 0 ? '14:23' : '—';
-            document.getElementById('storageUsed').textContent = '2.4 ГБ';
-            document.getElementById('uptime').textContent = '14ч';
-
-            // Load gallery
-            const galleryGrid = document.getElementById('galleryGrid');
-            if (demoEvents.length > 0) {
-                galleryGrid.innerHTML = demoEvents.map(event => `
-                    <div class="event-card" onclick="openModal(${event.id})">
-                        <div class="event-image">
-                            <img src="${event.image}" alt="Event">
-                            <div class="event-badge">${event.typeName}</div>
-                        </div>
-                        <div class="event-info">
-                            <div class="event-type">${event.typeName}</div>
-                            <div class="event-time">${event.time}</div>
-                            <div class="event-meta">
-                                <span>⏱️ ${event.duration}</span>
-                                <span>🎯 ${event.confidence}</span>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            // Load recent events
-            const recentEvents = document.getElementById('recentEvents');
-            if (demoEvents.length > 0) {
-                recentEvents.innerHTML = demoEvents.slice(0, 3).map(event => `
-                    <div class="log-entry alarm">
-                        <div class="log-time">${event.time}</div>
-                        <div class="log-message">${event.typeName} — ${event.confidence} уверенность</div>
-                    </div>
-                `).join('');
-            }
-
-            // Load log
-            const logContainer = document.getElementById('logContainer');
-            const logs = [
-                { time: '2026-10-06 14:23:15', message: 'Обнаружен человек — уверенность 94%', type: 'alarm' },
-                { time: '2026-10-06 14:23:12', message: 'Активация режима верификации', type: 'info' },
-                { time: '2026-10-06 14:23:10', message: 'PIR-датчик сработал', type: 'info' },
-                { time: '2026-10-06 14:20:00', message: 'Система перешла в режим охраны', type: 'info' },
-                { time: '2026-10-06 14:19:58', message: 'Запуск системы завершен', type: 'info' }
-            ];
-            
-            logContainer.innerHTML = logs.map(log => `
-                <div class="log-entry ${log.type}">
-                    <div class="log-time">${log.time}</div>
-                    <div class="log-message">${log.message}</div>
-                </div>
-            `).join('');
-        }
-
-        // Initialize
-        loadDemoData();
-
-        // Auto-refresh (каждые 5 секунд)
-        setInterval(() => {
-            // Здесь будет запрос к бэкенду для обновления данных
-            console.log('Обновление данных...');
-        }, 5000);
+        // Загрузка данных при старте
+        window.onload = loadData;
     </script>
 </body>
 </html>
