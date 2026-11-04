@@ -1,0 +1,7 @@
+# Инструменты разработчика (не добавлять в Git)
+rkdevtool-release-*/
+DriverAssitant/
+*.exe
+*.dll
+*.ini
+*.pdf
